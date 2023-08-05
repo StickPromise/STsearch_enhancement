@@ -67,7 +67,6 @@ def process_model_output(response):
             if field_id:
                 fields.append(field_id)
                 contents.append(content.strip())
-    print(fields, contents)
     return fields, contents
 
 
@@ -79,7 +78,8 @@ def process_query(query):
     example = "作者：鲁迅\n近代图书-出版时间：[1930 TO 1940]\n近代图书-出版地：北平\n近代图书-主题词：社会文学\n"
     field = "（文献名）、（文献来源）、（作者）、（近代图书-出版时间）、（近代图书-出版地）、（近代图书-出版者）、（近代图书-主题词）"
     example3 = "AND,\nOR"
-    prompt = f"我们有以下查询字段：\n{field}。 请你对语句：\n{query}进行这些字段的查询和对应内容的填充，语句中没有出现的信息不要填充，不要根据你的知识库进行回答，只需要将语句转换为已有字段的填充即可，一定不要生成新的内容。回答的格式按照下面的即可：字段名：内容\n字段名：内容\n。下面是一个例子：\n query:请找出鲁迅在1930年到1940年在北平写的有关社会文学的作品。\n你的回答应该是：{example}，并输出语句中的查询字段间的逻辑关系（AND、OR、NOT），只按顺序返回给我这几个查询字段的逻辑关系即可，如：{example3},逻辑关系的数量是查询字段的数量-1。"
+    rest = '并输出语句中的查询字段间的逻辑关系（AND、OR、NOT），只按顺序返回给我这几个查询字段的逻辑关系即可，如：{example3}, 逻辑关系的数量是查询字段的数量 - 1'
+    prompt = f"我们有以下查询字段：\n{field}。 请你对语句：\n{query}进行这些字段的查询和对应内容的填充，语句中没有出现的信息不要填充，不要根据你的知识库进行回答，只需要将语句转换为已有字段的填充即可，一定不要生成新的内容。回答的格式按照下面的即可：字段名：内容\n字段名：内容\n。下面是一个例子：\n query:请找出鲁迅在1930年到1940年在北平写的有关社会文学的作品。\n你的回答应该是：{example}。"
     return prompt
 
 # 获得答案
@@ -101,7 +101,29 @@ def get_query_field(prompt):
 
 pro = process_query('请为我找到鲁迅在1930年到1940年在北平写的有关社会文学的作品。')
 res = get_query_field(pro)
-process_model_output(res)
+fields, contents = process_model_output(res)
+
+
+def create_json(fields, contents):
+    # Remove leading/trailing whitespace (including newlines) from each field and content
+    fields = [field.strip() for field in fields]
+    contents = [content.strip() for content in contents]
+
+    result = {
+        "fields": fields,
+        "contents": contents,
+        "combines": ["AND", "OR"],
+        "types": ["0", "0", "0"]
+    }
+    return result
+
+
+
+result_json = create_json(fields, contents)
+
+result_json_str = json.dumps(result_json, indent=4, ensure_ascii=False)
+
+print(result_json_str)
 
 
 
