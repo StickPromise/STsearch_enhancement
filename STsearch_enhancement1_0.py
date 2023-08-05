@@ -108,16 +108,15 @@ def create_json(fields, contents):
     # Remove leading/trailing whitespace (including newlines) from each field and content
     fields = [field.strip() for field in fields]
     contents = [content.strip() for content in contents]
-
+    combines = ["AND"] * (len(fields) - 1)
+    types = ["0"] * len(fields)
     result = {
         "fields": fields,
         "contents": contents,
-        "combines": ["AND", "OR"],
-        "types": ["0", "0", "0"]
+        "combines": combines,
+        "types": types
     }
     return result
-
-
 
 result_json = create_json(fields, contents)
 
