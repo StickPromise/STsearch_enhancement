@@ -1,21 +1,11 @@
-from langchain.document_loaders import DirectoryLoader
-import jieba
-import jieba.posseg as pseg
-from langchain.text_splitter import CharacterTextSplitter
-import numpy as np
-import os
 import json
-from rank_bm25 import BM25Okapi
-import dateparser
-from dateparser import search
-from fuzzywuzzy import fuzz
-import torch
 import openai
 import os
 import requests
-
-os.environ["http_proxy"] = "http://127.0.0.1:8234"     # 修改为自己的代理端口
-os.environ["https_proxy"] = "http://127.0.0.1:8234"    # 修改为自己的代理端口
+import torch
+from hanziconv import HanziConv
+os.environ["http_proxy"] = ""     # 修改为自己的代理端口
+os.environ["https_proxy"] = ""    # 修改为自己的代理端口
 
 openai.api_key = "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"    # 修改为自己的api_key
 
@@ -45,6 +35,7 @@ def get_ans(prompt):
     }).json()
     return response["data"][0][0][1]
 
+# 按照：匹配出需要的字段，并且转换为id
 def process_model_output(response):
     fields = []
     contents = []
@@ -70,6 +61,20 @@ def process_model_output(response):
     return fields, contents
 
 
+def get_ans(prompt):
+
+    # 根据历史对话，cute gpt得到答案
+    response = requests.post("http://10.176.40.138:23489/ddemos/cutegpt_normal/run/submit", json={
+        "data": [
+            prompt,
+            [],
+            None,
+        ]
+    }).json()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    print(response)
+    return response["data"][0][0][1]
 
 
 # 告诉模型有什么字段和含义，获得加工后的prompt
@@ -84,6 +89,9 @@ def process_query(query):
 
 # 获得答案
 def get_query_field(prompt):
+    # # 调用Cute gpt
+    # response = get_ans(prompt)
+    # print(response)
     # 提供上下文信息
     res = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -93,15 +101,7 @@ def get_query_field(prompt):
     )
 
     response = (res["choices"][0]["message"]["content"])
-    # # 调用Cute gpt
-    # response = get_ans(prompt)
-    print(response)
     return response
-
-
-pro = process_query('请为我找到鲁迅在1930年到1940年在北平写的有关社会文学的作品。')
-res = get_query_field(pro)
-fields, contents = process_model_output(res)
 
 
 def create_json(fields, contents):
@@ -118,11 +118,17 @@ def create_json(fields, contents):
     }
     return result
 
-result_json = create_json(fields, contents)
 
-result_json_str = json.dumps(result_json, indent=4, ensure_ascii=False)
+def final_result(query):
+    processed_query = process_query(query)
+    query_field = get_query_field(processed_query)
+    fields, contents = process_model_output(query_field)
+    result_json = create_json(fields, contents)
+    result_json_str = json.dumps(result_json, indent=4, ensure_ascii=False)
+    return result_json_str
 
-print(result_json_str)
+query = '请找到1950年到1965年期间出版的鲁迅写的有关社会科学的文章'
+print(final_result(query))
 
 
 
