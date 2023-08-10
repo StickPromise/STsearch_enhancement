@@ -1,1 +1,2 @@
 # STsearch_enhancement
+STsearch_enhancement1_0.py文件中有openai的key还有代理端口，需要vpn能力
