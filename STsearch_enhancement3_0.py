@@ -4,6 +4,12 @@ import os
 import requests
 import torch
 from hanziconv import HanziConv
+import re
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+
 os.environ["http_proxy"] = "http://127.0.0.1:8234"     # 修改为自己的代理端口
 os.environ["https_proxy"] = "http://127.0.0.1:8234"    # 修改为自己的代理端口
 
@@ -103,25 +109,40 @@ def get_query_field(prompt):
     response = (res["choices"][0]["message"]["content"])
     return response
 
+# 转换时间格式
+def convert_decade(content):
+    match = re.match(r"(\d+)年代", content)
+    if match:
+        decade = int(match.group(1))
+        start_year = 1900 + decade
+        end_year = start_year + 9
+        return f"[{start_year} TO {end_year}]"
+    return content
+
 
 def create_json(fields, contents):
-    filtered_fields = []
-    filtered_contents = []
-    for field, content in zip(fields, contents):
-        content = content.strip()
-        if content:  # 仅当内容不为空时添加字段和内容
-            filtered_fields.append(field.strip())
-            filtered_contents.append(content)
-    combines = ["AND"] * (len(filtered_fields) - 1)
-    types = ["0"] * len(filtered_fields)
-    result = {
-        "fields": filtered_fields,
-        "contents": filtered_contents,
-        "combines": combines,
-        "types": types
-    }
-    return result
-
+    try:
+        filtered_fields = []
+        filtered_contents = []
+        for field, content in zip(fields, contents):
+            content = content.strip()
+            content = convert_decade(content)  # 转换时间字段
+            if content and content != "无":
+                filtered_fields.append(field.strip())
+                filtered_contents.append(content)
+        combines = ["AND"] * (len(filtered_fields) - 1)
+        types = ["0"] * len(filtered_fields)
+        result = {
+            "fields": filtered_fields,
+            "contents": filtered_contents,
+            "combines": combines,
+            "types": types
+        }
+        return result
+    except Exception as e:
+        logging.error(f"An error occurred while creating JSON: {str(e)}")
+        # 可以选择抛出自定义异常或返回特定的错误响应
+        raise CustomException("An error occurred while processing the request")
 
 
 def final_result(query):
@@ -132,7 +153,7 @@ def final_result(query):
     result_json_str = json.dumps(result_json, indent=4, ensure_ascii=False)
     return result_json_str
 
-query = '请帮我找到六十年代鲁迅写的书。'
+query = '有没有胡适在60年代写的文章？'
 print(final_result(query))
 
 
