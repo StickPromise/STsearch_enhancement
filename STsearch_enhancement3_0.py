@@ -101,8 +101,10 @@ def get_query_field(prompt):
     # 提供上下文信息
     res = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
+        temperature=0.0,
         messages=[
-            {"role": "user", "content": prompt}  # 单轮对话，修改其中的content
+            {"role": "user", "content": prompt}
+            # 单轮对话，修改其中的content
         ]
     )
 
@@ -127,7 +129,7 @@ def create_json(fields, contents):
         for field, content in zip(fields, contents):
             content = content.strip()
             content = convert_decade(content)  # 转换时间字段
-            if content and content != "无":
+            if content and content.lower() != ("无", "NULL", "不填充"):
                 filtered_fields.append(field.strip())
                 filtered_contents.append(content)
         combines = ["AND"] * (len(filtered_fields) - 1)
@@ -153,8 +155,8 @@ def final_result(query):
     result_json_str = json.dumps(result_json, indent=4, ensure_ascii=False)
     return result_json_str
 
-query = '有没有胡适在60年代写的文章？'
-print(final_result(query))
+# query = '和妇女相关的近代文献'
+# print(final_result(query))
 
 
 
