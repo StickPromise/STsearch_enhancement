@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from STsearch_enhancement1_0 import final_result
+from STsearch_enhancement3_0 import final_result
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -13,5 +13,5 @@ def get_result():
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(host='0.0.0.0', port=5001, debug=True)
 
