@@ -2,10 +2,10 @@ import requests
 import json
 
 # 服务器的URL
-url = "http://localhost:5000/get_result"
+url = "http://localhost:5001/get_result"
 
 # 您要查询的内容
-query = "请找到1950年到1965年期间出版的鲁迅写的有关社会科学的文章"
+query = "和妇女相关的近代文献"
 
 # 创建请求的JSON数据
 data = {
